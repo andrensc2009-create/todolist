@@ -1,120 +1,326 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'flappy_game.dart';
 
-void main() {
-  runApp(const MyApp());
+void main(List<String> args) {
+  runApp(const TodoListApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TodoListApp extends StatelessWidget {
+  const TodoListApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'TodoList App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(useMaterial3: true),
+      home: const MinhaTelaPrincipal(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MinhaTelaPrincipal extends StatefulWidget {
+  const MinhaTelaPrincipal({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MinhaTelaPrincipal> createState() => _MinhaTelaPrincipalState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
+    with SingleTickerProviderStateMixin {
+  List<Map<String, dynamic>> tarefas = [];
+  final TextEditingController _controleTexto = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  // -------------------------------------------------------
+  //  ESTADO DO BOTÃO TROLL
+  // -------------------------------------------------------
+  int _clickCount = 0;          // quantas vezes o + foi clicado
+  double _btnX = -1;            // posição X normalizada (-1 = canto padrão)
+  double _btnY = -1;            // posição Y normalizada (-1 = canto padrão)
+  bool _animating = false;
+  late AnimationController _escapeController;
+  late Animation<double> _escapeX;
+  late Animation<double> _escapeY;
+
+  final Random _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _escapeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+  void dispose() {
+    _escapeController.dispose();
+    _controleTexto.dispose();
+    super.dispose();
+  }
+
+  // -------------------------------------------------------
+  //  LÓGICA DO BOTÃO
+  // -------------------------------------------------------
+  void _onFabPressed(BoxConstraints constraints) {
+    _clickCount++;
+
+    if (_clickCount == 1 || _clickCount == 2) {
+      // Escapar para posição aleatória
+      _escaparBotao(constraints);
+    } else {
+      // Na 3ª vez: abrir o jogo
+      _clickCount = 0; // reseta pra trollar de novo depois
+      _abrirJogo();
+    }
+  }
+
+  void _escaparBotao(BoxConstraints constraints) {
+    if (_animating) return;
+
+    const double btnSize = 56;
+    const double margin = 16;
+    final double maxX = constraints.maxWidth - btnSize - margin;
+    final double maxY = constraints.maxHeight - btnSize - margin;
+
+    // Posição atual do botão
+    double curX = _btnX < 0
+        ? constraints.maxWidth - btnSize - margin
+        : _btnX * (constraints.maxWidth - btnSize - margin);
+    double curY = _btnY < 0
+        ? constraints.maxHeight - btnSize - margin
+        : _btnY * (constraints.maxHeight - btnSize - margin);
+
+    // Gera nova posição bem diferente da atual
+    double newX, newY;
+    do {
+      newX = margin + _random.nextDouble() * (maxX - margin);
+      newY = margin + _random.nextDouble() * (maxY - margin);
+    } while ((newX - curX).abs() < 120 || (newY - curY).abs() < 80);
+
+    _escapeX = Tween<double>(
+      begin: curX / (constraints.maxWidth - btnSize - margin),
+      end: newX / (constraints.maxWidth - btnSize - margin),
+    ).animate(CurvedAnimation(parent: _escapeController, curve: Curves.easeOutBack));
+
+    _escapeY = Tween<double>(
+      begin: curY / (constraints.maxHeight - btnSize - margin),
+      end: newY / (constraints.maxHeight - btnSize - margin),
+    ).animate(CurvedAnimation(parent: _escapeController, curve: Curves.easeOutBack));
+
+    _animating = true;
+    _escapeController.forward(from: 0).then((_) {
+      setState(() {
+        _btnX = newX / (constraints.maxWidth - btnSize - margin);
+        _btnY = newY / (constraints.maxHeight - btnSize - margin);
+        _animating = false;
+      });
+    });
+
+    // Mostra snackbar de provocação
+    final List<String> provocacoes = [
+      'Haha, tão rápido? 😈',
+      'Quase! Tenta de novo... 😏',
+      'Muito lento! 🐢',
+      'Não me pega não! 😜',
+    ];
+    final msg = provocacoes[_random.nextInt(provocacoes.length)];
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        duration: const Duration(milliseconds: 900),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.deepPurple,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    );
+  }
+
+  void _abrirJogo() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => FlappyGameDialog(
+        onVitoria: () {
+          // Após vencer o jogo, abre o formulário de tarefa
+          Future.delayed(const Duration(milliseconds: 100), abrirJanelaCadastro);
+        },
+      ),
+    );
+  }
+
+  // -------------------------------------------------------
+  //  FORMULÁRIO DE TAREFA
+  // -------------------------------------------------------
+  void abrirJanelaCadastro() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Text('🎉 '),
+              Text('Nova Tarefa'),
+            ],
+          ),
+          content: TextField(
+            controller: _controleTexto,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Digite o nome da tarefa...',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (_controleTexto.text.isNotEmpty) {
+                  setState(() {
+                    tarefas.add({
+                      'titulo': _controleTexto.text,
+                      'concluida': false,
+                    });
+                  });
+                  _controleTexto.clear();
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Adicionar'),
             ),
           ],
-        ),
+        );
+      },
+    );
+  }
+
+  // -------------------------------------------------------
+  //  BUILD
+  // -------------------------------------------------------
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('TodoList App'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.yellow,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              // ---- Lista de tarefas ----
+              tarefas.isEmpty
+                  ? const Center(child: Text('Nenhuma tarefa por enquanto...'))
+                  : ListView.builder(
+                      itemCount: tarefas.length,
+                      itemBuilder: (context, index) {
+                        final bool estaConcluida = tarefas[index]['concluida'];
+                        return ListTile(
+                          leading: Icon(
+                            estaConcluida
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            color: Colors.green,
+                          ),
+                          title: Text(
+                            tarefas[index]['titulo'],
+                            style: TextStyle(
+                              decoration: estaConcluida
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              color: estaConcluida ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              setState(() => tarefas.removeAt(index));
+                            },
+                          ),
+                          onTap: () {
+                            setState(() {
+                              tarefas[index]['concluida'] =
+                                  !tarefas[index]['concluida'];
+                            });
+                          },
+                        );
+                      },
+                    ),
+
+              // ---- Botão flutuante que escapa ----
+              AnimatedBuilder(
+                animation: _escapeController,
+                builder: (context, child) {
+                  const double btnSize = 56;
+                  const double margin = 16;
+                  double x, y;
+
+                  if (_btnX < 0) {
+                    // Posição padrão (canto inferior direito)
+                    x = constraints.maxWidth - btnSize - margin;
+                    y = constraints.maxHeight - btnSize - margin;
+                  } else if (_animating) {
+                    x = _escapeX.value * (constraints.maxWidth - btnSize - margin);
+                    y = _escapeY.value * (constraints.maxHeight - btnSize - margin);
+                  } else {
+                    x = _btnX * (constraints.maxWidth - btnSize - margin);
+                    y = _btnY * (constraints.maxHeight - btnSize - margin);
+                  }
+
+                  return Positioned(
+                    left: x,
+                    top: y,
+                    child: _TrollFab(
+                      clickCount: _clickCount,
+                      onPressed: () => _onFabPressed(constraints),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------
+//  BOTÃO TROLL COM DICA VISUAL DE QUANTOS CLIQUES FALTAM
+// -------------------------------------------------------
+class _TrollFab extends StatelessWidget {
+  final int clickCount;
+  final VoidCallback onPressed;
+
+  const _TrollFab({required this.clickCount, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    // Muda a cor conforme cliques: azul → laranja → vermelho → azul de novo
+    final List<Color> cores = [
+      Colors.blue,
+      Colors.orange,
+      Colors.red,
+    ];
+    final color = cores[clickCount % cores.length];
+
+    final List<String> tooltips = [
+      'Adicionar tarefa',
+      'Quase lá... (2/3)',
+      '🎮 Última chance!',
+    ];
+
+    return Tooltip(
+      message: tooltips[clickCount % tooltips.length],
+      child: FloatingActionButton(
+        heroTag: 'troll_fab',
+        onPressed: onPressed,
+        backgroundColor: color,
         child: const Icon(Icons.add),
       ),
     );
