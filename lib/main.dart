@@ -32,9 +32,6 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
   List<Map<String, dynamic>> tarefas = [];
   final TextEditingController _controleTexto = TextEditingController();
 
-  // -------------------------------------------------------
-  //  ESTADO DO BOTÃO TROLL
-  // -------------------------------------------------------
   int _clickCount = 0;          // quantas vezes o + foi clicado
   double _btnX = -1;            // posição X normalizada (-1 = canto padrão)
   double _btnY = -1;            // posição Y normalizada (-1 = canto padrão)
@@ -61,9 +58,6 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
     super.dispose();
   }
 
-  // -------------------------------------------------------
-  //  LÓGICA DO BOTÃO
-  // -------------------------------------------------------
   void _onFabPressed(BoxConstraints constraints) {
     _clickCount++;
 
@@ -121,10 +115,9 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
 
     // Mostra snackbar de provocação
     final List<String> provocacoes = [
-      'Haha, tão rápido? 😈',
-      'Quase! Tenta de novo... 😏',
-      'Muito lento! 🐢',
-      'Não me pega não! 😜',
+      'Haha',
+      'Quase!',
+      'Muito lento',
     ];
     final msg = provocacoes[_random.nextInt(provocacoes.length)];
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -151,9 +144,6 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
     );
   }
 
-  // -------------------------------------------------------
-  //  FORMULÁRIO DE TAREFA
-  // -------------------------------------------------------
   void abrirJanelaCadastro() {
     showDialog(
       context: context,
@@ -161,7 +151,7 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
         return AlertDialog(
           title: const Row(
             children: [
-              Text('🎉 '),
+              Text('!'),
               Text('Nova Tarefa'),
             ],
           ),
@@ -198,9 +188,6 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
     );
   }
 
-  // -------------------------------------------------------
-  //  BUILD
-  // -------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -290,9 +277,6 @@ class _MinhaTelaPrincipalState extends State<MinhaTelaPrincipal>
   }
 }
 
-// -------------------------------------------------------
-//  BOTÃO TROLL COM DICA VISUAL DE QUANTOS CLIQUES FALTAM
-// -------------------------------------------------------
 class _TrollFab extends StatelessWidget {
   final int clickCount;
   final VoidCallback onPressed;
@@ -312,7 +296,7 @@ class _TrollFab extends StatelessWidget {
     final List<String> tooltips = [
       'Adicionar tarefa',
       'Quase lá... (2/3)',
-      '🎮 Última chance!',
+      'Última chance!',
     ];
 
     return Tooltip(
