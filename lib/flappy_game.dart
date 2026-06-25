@@ -3,9 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// ============================================================
 //  CONSTANTES DO JOGO
-// ============================================================
 // Tamanho real do pássaro no sprite recortado é 32x27px → escalamos x3
 const double kBirdW = 64.0;
 const double kBirdH = 54.0;
@@ -22,9 +20,6 @@ const double kPipeSpeed = 3.0;
 const int    kPipesToWin = 5;
 const int    kPipeInterval = 100; // frames entre spawns
 
-// ============================================================
-//  DIALOG WRAPPER
-// ============================================================
 class FlappyGameDialog extends StatelessWidget {
   final VoidCallback onVitoria;
   const FlappyGameDialog({super.key, required this.onVitoria});
@@ -45,9 +40,6 @@ class FlappyGameDialog extends StatelessWidget {
   }
 }
 
-// ============================================================
-//  GAME WIDGET
-// ============================================================
 class FlappyGame extends StatefulWidget {
   final VoidCallback onVitoria;
   const FlappyGame({super.key, required this.onVitoria});
@@ -99,7 +91,6 @@ class _FlappyGameState extends State<FlappyGame>
     super.dispose();
   }
 
-  // ---- GAME LOOP ----
   void _loop() {
     if (!_started || _dead || _won) return;
     setState(() {
@@ -202,9 +193,6 @@ class _FlappyGameState extends State<FlappyGame>
     _ticker.stop();
   }
 
-  // ============================================================
-  //  BUILD
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Focus(
@@ -286,16 +274,16 @@ class _FlappyGameState extends State<FlappyGame>
         emoji: '🐦',
         title: 'IsNotDuolingo',
         subtitle: 'Passe por $kPipesToWin postes para\nadicionar sua tarefa!',
-        btnLabel: '▶  Toque ou Espaço para jogar',
+        btnLabel: 'Toque ou Espaço para jogar',
         btnColor: Colors.green.shade600,
       ),
 
       // ── Game Over ──────────────────────────────────────────
       if (_dead) _overlay(
         emoji: '💥',
-        title: 'Game Over!',
+        title: 'perdeu!',
         subtitle: 'Você passou $_score poste${_score != 1 ? "s" : ""}...\nTenta de novo!',
-        btnLabel: '🔄  Toque para recomeçar',
+        btnLabel: 'Toque para recomeçar',
         btnColor: Colors.red.shade600,
       ),
     ]);
@@ -379,9 +367,6 @@ class _FlappyGameState extends State<FlappyGame>
   }
 }
 
-// ============================================================
-//  BOTÃO PULSANTE
-// ============================================================
 class _PulseButton extends StatefulWidget {
   final String label;
   final Color color;
@@ -434,9 +419,6 @@ class _PulseButtonState extends State<_PulseButton>
   }
 }
 
-// ============================================================
-//  MODELO DE CANO
-// ============================================================
 class _Pipe {
   double x;
   final double gapCenter;
